@@ -1,0 +1,33 @@
+# macOS
+.DS_Store
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data / databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Backups / exports
+backups/
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Credentials / keys
+*.key
+*.pem
+*.p12
+*.pfx
+
+# IDE
+.vscode/
+.idea/
