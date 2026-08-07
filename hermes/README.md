@@ -26,12 +26,6 @@ If LM Studio authentication is enabled, enter the API token during setup.
 docker compose up -d
 ```
 
-## Dashboard
-
-```text
-http://localhost:9119
-```
-
 ## Gateway
 
 ```text

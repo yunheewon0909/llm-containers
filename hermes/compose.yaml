@@ -11,16 +11,9 @@ services:
 
     ports:
       - "127.0.0.1:8642:8642"
-      - "127.0.0.1:9119:9119"
 
     volumes:
       - hermes-data:/opt/data
-
-    environment:
-      HERMES_DASHBOARD: "1"
-
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
 volumes:
   hermes-data:
