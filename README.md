@@ -1,58 +1,91 @@
 # Local AI Containers
 
-Docker Compose configurations for running local AI services with **LM Studio** as the inference backend.
-
-All application data is stored in Docker named volumes. No application data or credentials are bind-mounted to the host.
+Docker-based local AI stack using LM Studio as the inference backend.
 
 ## Services
 
-### Open WebUI
+- Open WebUI
+- Hermes Agent
+- SearXNG
 
-Web interface for local LLMs.
+All persistent runtime data is stored in Docker named volumes.
 
-```text
-open-webui/
-├── compose.yaml
-└── README.md
-```
-
-See [`open-webui/README.md`](./open-webui/README.md) for setup and usage.
-
-### Hermes Agent
-
-Local AI agent powered by LM Studio.
+## Architecture
 
 ```text
-hermes/
-├── compose.yaml
-└── README.md
-```
+LM Studio (macOS)
+       │
+       │ host.docker.internal:1234
+       │
+Docker ├── Open WebUI
+       ├── Hermes
+       └── SearXNG
+            │
+            └── Internet
 
-See [`hermes/README.md`](./hermes/README.md) for setup and usage.
+Shared Docker network:
+local-ai-network
+```
 
 ## Requirements
 
 - macOS
 - Docker Desktop
 - LM Studio
+- Tailscale (optional)
 
-LM Studio should run on the host with its API server enabled on port `1234`.
+## Initial Setup
 
-## Quick Start
+Create the shared Docker network once:
+
+```bash
+docker network create local-ai-network
+```
+
+Start SearXNG:
+
+```bash
+cd searxng
+docker compose up -d
+```
+
+Start Open WebUI:
+
+```bash
+cd ../open-webui
+docker compose up -d
+```
+
+Initial Hermes setup:
+
+```bash
+cd ../hermes
+docker compose run --rm hermes setup
+docker compose up -d
+```
+
+## LM Studio
+
+Run the LM Studio API server on port `1234`.
+
+Docker containers connect using:
+
+```text
+http://host.docker.internal:1234/v1
+```
+
+## SearXNG
 
 Open WebUI:
 
-```bash
-cd open-webui
-docker compose up -d
+```text
+http://searxng:8080/search?q=<query>
 ```
 
 Hermes:
 
-```bash
-cd hermes
-docker compose run --rm hermes setup
-docker compose up -d
+```text
+http://searxng:8080
 ```
 
 ## Update
@@ -63,6 +96,51 @@ Run inside each service directory:
 docker compose pull && docker compose up -d
 ```
 
+For SearXNG:
+
+```bash
+docker compose build --pull
+docker compose up -d
+```
+
+## Network
+
+Check connected containers:
+
+```bash
+docker network inspect local-ai-network
+```
+
+Expected containers:
+
+```text
+open-webui
+hermes
+searxng
+```
+
+## Remote Access with Tailscale
+
+Services remain bound to `127.0.0.1`.
+
+Open WebUI:
+
+```bash
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg 3000
+```
+
+Hermes Dashboard:
+
+```bash
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=9119 http://127.0.0.1:9119
+```
+
+Check:
+
+```bash
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve status
+```
+
 ## Security
 
-Do not commit API keys, tokens, credentials, runtime data, or Docker volume exports to this repository.
+Do not commit API keys, tokens, credentials, runtime data, or Docker volume exports.

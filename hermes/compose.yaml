@@ -15,6 +15,16 @@ services:
     volumes:
       - hermes-data:/opt/data
 
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    networks:
+      - local-ai-network
+
 volumes:
   hermes-data:
     name: hermes-data
+
+networks:
+  local-ai-network:
+    external: true

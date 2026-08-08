@@ -28,6 +28,60 @@ http://host.docker.internal:1234/v1
 
 If LM Studio authentication is enabled, enter the API token in Open WebUI.
 
+## Remote Access with Tailscale
+
+Keep Open WebUI bound to localhost in `compose.yaml`:
+
+```yaml
+ports:
+  - "127.0.0.1:3000:8080"
+```
+
+If Tailscale is installed as a macOS app:
+
+```bash
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg 3000
+```
+
+Check the assigned URL:
+
+```bash
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve status
+```
+
+Use the displayed `*.ts.net` URL from another device connected to the same tailnet.
+
+## Shared Docker Network
+
+The following Docker network must exist:
+
+```bash
+docker network create local-ai-network
+```
+
+Open WebUI, Hermes, and SearXNG use the same network:
+
+```text
+local-ai-network
+```
+
+## Web Search with SearXNG
+
+Enable Web Search in Open WebUI and select SearXNG.
+
+Query URL:
+
+```text
+http://searxng:8080/search?q=<query>
+```
+
+Test connectivity:
+
+```bash
+docker exec open-webui curl -s \
+  "http://searxng:8080/search?q=test&format=json"
+```
+
 ## Status
 
 ```bash

@@ -19,6 +19,13 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+    networks:
+      - local-ai-network
+
 volumes:
   open-webui-data:
     name: open-webui-data
+
+networks:
+  local-ai-network:
+    external: true

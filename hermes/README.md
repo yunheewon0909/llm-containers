@@ -38,6 +38,49 @@ http://localhost:8642
 docker exec -it hermes hermes
 ```
 
+## Shared Docker Network
+
+The following Docker network must exist:
+
+```bash
+docker network create local-ai-network
+```
+
+Hermes, Open WebUI, and SearXNG use:
+
+```text
+local-ai-network
+```
+
+## Web Search with SearXNG
+
+Configure Hermes Web Search to use SearXNG.
+
+URL:
+
+```text
+http://searxng:8080
+```
+
+Test connectivity:
+
+```bash
+docker exec hermes curl -s \
+  "http://searxng:8080/search?q=test&format=json"
+```
+
+## Terminal Backend
+
+When Hermes itself runs inside Docker, select:
+
+```text
+Local
+```
+
+This executes terminal commands inside the Hermes container.
+
+Do not select the Docker terminal backend unless nested Docker sandbox execution is intentionally configured.
+
 ## Status
 
 ```bash

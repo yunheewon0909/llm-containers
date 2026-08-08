@@ -1,0 +1,26 @@
+name: searxng
+
+services:
+  searxng:
+    build:
+      context: .
+      pull: true
+
+    image: local/searxng:latest
+    container_name: searxng
+
+    restart: unless-stopped
+
+    volumes:
+      - searxng-cache:/var/cache/searxng
+
+    networks:
+      - local-ai-network
+
+volumes:
+  searxng-cache:
+    name: searxng-cache
+
+networks:
+  local-ai-network:
+    external: true
