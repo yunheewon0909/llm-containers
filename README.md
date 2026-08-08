@@ -126,13 +126,13 @@ Services remain bound to `127.0.0.1`.
 Open WebUI:
 
 ```bash
-/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg 3000
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=443 localhost:3000
 ```
 
-Hermes Dashboard:
+SearXNG Dashboard:
 
 ```bash
-/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=9119 http://127.0.0.1:9119
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=8443 localhost:8888
 ```
 
 Check:

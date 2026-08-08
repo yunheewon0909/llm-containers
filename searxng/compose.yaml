@@ -17,6 +17,9 @@ services:
     networks:
       - local-ai-network
 
+    ports:
+      - "127.0.0.1:8888:8080"
+
 volumes:
   searxng-cache:
     name: searxng-cache
