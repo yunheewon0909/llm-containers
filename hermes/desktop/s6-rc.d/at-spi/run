@@ -1,0 +1,40 @@
+#!/command/with-contenv sh
+# shellcheck shell=sh
+exec 2>&1
+export HOME=/opt/data
+export XDG_CACHE_HOME=/opt/data/.cache
+export XDG_CONFIG_HOME=/opt/data/.config
+
+while ! s6-setuidgid hermes xdpyinfo -display "${DISPLAY:-:99}" >/dev/null 2>&1; do
+    s6-sleep 1
+done
+
+while ! s6-setuidgid hermes dbus-send --session --type=method_call \
+    --print-reply --dest=org.freedesktop.DBus / \
+    org.freedesktop.DBus.ListNames >/dev/null 2>&1; do
+    s6-sleep 1
+done
+
+# Own org.a11y.Bus on the shared session bus and publish the resulting AT-SPI
+# bus address to the shared X11 root window. Starting the launcher directly is
+# important: probing org.a11y.Bus first would D-Bus-activate it outside s6.
+# Signal readiness only after this launcher owns the bus name, preventing GTK
+# clients in dependent services from winning the activation race.
+s6-setuidgid hermes /usr/libexec/at-spi-bus-launcher \
+    --launch-immediately --a11y=1 &
+launcher_pid=$!
+
+trap 'kill "$launcher_pid" 2>/dev/null || true; wait "$launcher_pid" 2>/dev/null || true; exit 0' TERM INT HUP
+
+while ! s6-setuidgid hermes dbus-send --session --type=method_call \
+    --print-reply --dest=org.freedesktop.DBus / \
+    org.freedesktop.DBus.ListNames 2>/dev/null | grep -q 'org.a11y.Bus'; do
+    if ! kill -0 "$launcher_pid" 2>/dev/null; then
+        wait "$launcher_pid"
+        exit $?
+    fi
+    s6-sleep 1
+done
+
+printf '\n' >&3
+wait "$launcher_pid"

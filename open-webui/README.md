@@ -40,7 +40,7 @@ ports:
 If Tailscale is installed as a macOS app:
 
 ```bash
-/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg 3000
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=443 localhost:3000
 ```
 
 Check the assigned URL:
@@ -50,6 +50,9 @@ Check the assigned URL:
 ```
 
 Use the displayed `*.ts.net` URL from another device connected to the same tailnet.
+
+For the complete port matrix, including Hermes Dashboard and VNC, see the
+[repository Tailscale instructions](../README.md#remote-access-with-tailscale).
 
 ## Shared Docker Network
 

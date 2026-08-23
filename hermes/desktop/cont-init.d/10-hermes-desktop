@@ -1,0 +1,89 @@
+#!/command/with-contenv sh
+# shellcheck shell=sh
+set -eu
+
+# The upstream 01-hermes-setup hook has already applied any HERMES_UID/GID
+# remap by the time this script runs, so use the runtime account by name.
+install -d -m 0700 -o hermes -g hermes /run/hermes-desktop
+rm -f /run/hermes-desktop/dbus-session-bus
+install -d -m 1777 -o root -g root /tmp/.X11-unix
+rm -f /tmp/.X11-unix/X99 /tmp/.X99-lock
+
+# /opt/data is the existing persistent volume. Do not replace or clear it;
+# create only the isolated Computer Use profile paths when absent.
+install -d -m 0750 -o hermes -g hermes /opt/data/computer-use
+install -d -m 0750 -o hermes -g hermes \
+    /opt/data/computer-use/chromium-profile
+# Chromium's process-singleton files contain the old container hostname and
+# PID. They are coordination locks, not profile data, and are always stale at
+# this pre-service point in a newly started container.
+rm -f \
+    /opt/data/computer-use/chromium-profile/SingletonCookie \
+    /opt/data/computer-use/chromium-profile/SingletonLock \
+    /opt/data/computer-use/chromium-profile/SingletonSocket
+install -d -m 0750 -o hermes -g hermes /opt/data/.cache
+install -d -m 0750 -o hermes -g hermes /opt/data/.config
+install -d -m 0750 -o hermes -g hermes /opt/data/.cache/fontconfig
+
+# Generate credentials once inside the existing persistent volume. Keeping
+# them out of Compose means they are neither committed nor exposed by
+# `docker inspect`. x11vnc's classic VNC authentication uses only the first
+# eight password characters, so generate exactly eight for clarity.
+credentials_dir=/opt/data/computer-use/credentials
+vnc_password_file="${credentials_dir}/vnc-password"
+dashboard_username_file="${credentials_dir}/dashboard-username"
+dashboard_password_file="${credentials_dir}/dashboard-password"
+dashboard_secret_file="${credentials_dir}/dashboard-secret"
+
+install -d -m 0700 -o hermes -g hermes "${credentials_dir}"
+
+random_hex() {
+    od -An -N "$1" -tx1 /dev/urandom | tr -d ' \n'
+}
+
+if [ ! -s "${vnc_password_file}" ]; then
+    random_hex 4 >"${vnc_password_file}"
+fi
+if [ ! -s "${dashboard_username_file}" ]; then
+    printf '%s\n' hermes >"${dashboard_username_file}"
+fi
+if [ ! -s "${dashboard_password_file}" ]; then
+    random_hex 16 >"${dashboard_password_file}"
+fi
+if [ ! -s "${dashboard_secret_file}" ]; then
+    random_hex 32 >"${dashboard_secret_file}"
+fi
+
+chown hermes:hermes \
+    "${vnc_password_file}" \
+    "${dashboard_username_file}" \
+    "${dashboard_password_file}" \
+    "${dashboard_secret_file}"
+chmod 0600 \
+    "${vnc_password_file}" \
+    "${dashboard_username_file}" \
+    "${dashboard_password_file}" \
+    "${dashboard_secret_file}"
+
+# Upstream's dashboard service uses /command/with-contenv. Values written here
+# are therefore available when the supervised service starts, without putting
+# plaintext credentials in the Docker container configuration. Respect any
+# explicitly configured basic, OAuth, or OIDC provider instead of overriding
+# it with the generated local credentials.
+if [ -z "${HERMES_DASHBOARD_BASIC_AUTH_USERNAME:-}" ] && \
+   [ -z "${HERMES_DASHBOARD_OAUTH_CLIENT_ID:-}" ] && \
+   [ -z "${HERMES_DASHBOARD_OIDC_ISSUER:-}" ]; then
+    install -m 0600 /dev/null \
+        /run/s6/container_environment/HERMES_DASHBOARD_BASIC_AUTH_USERNAME
+    install -m 0600 /dev/null \
+        /run/s6/container_environment/HERMES_DASHBOARD_BASIC_AUTH_PASSWORD
+    install -m 0600 /dev/null \
+        /run/s6/container_environment/HERMES_DASHBOARD_BASIC_AUTH_SECRET
+
+    sed -n '1p' "${dashboard_username_file}" > \
+        /run/s6/container_environment/HERMES_DASHBOARD_BASIC_AUTH_USERNAME
+    sed -n '1p' "${dashboard_password_file}" > \
+        /run/s6/container_environment/HERMES_DASHBOARD_BASIC_AUTH_PASSWORD
+    sed -n '1p' "${dashboard_secret_file}" > \
+        /run/s6/container_environment/HERMES_DASHBOARD_BASIC_AUTH_SECRET
+fi

@@ -2,15 +2,35 @@ name: hermes
 
 services:
   hermes:
-    image: nousresearch/hermes-agent:${HERMES_TAG:-latest}
+    build:
+      context: .
+      args:
+        HERMES_TAG: ${HERMES_TAG:-latest}
+        CUA_DRIVER_VERSION: ${CUA_DRIVER_VERSION:-0.21.0}
+    image: local/hermes-agent-desktop:${HERMES_TAG:-latest}
     container_name: hermes
 
     restart: unless-stopped
 
     command: gateway run
 
+    environment:
+      DISPLAY: ":99"
+      XDG_SESSION_TYPE: x11
+      XDG_RUNTIME_DIR: /run/hermes-desktop
+      XDG_CURRENT_DESKTOP: Openbox
+      DBUS_SESSION_BUS_ADDRESS: unix:path=/run/hermes-desktop/dbus-session-bus
+      NO_AT_BRIDGE: "0"
+      HERMES_DASHBOARD: "1"
+      HERMES_DASHBOARD_HOST: "0.0.0.0"
+      HERMES_DASHBOARD_PORT: "9119"
+
     ports:
       - "127.0.0.1:8642:8642"
+      - "127.0.0.1:5901:5900"
+      - "127.0.0.1:9119:9119"
+
+    shm_size: "1gb"
 
     volumes:
       - hermes-data:/opt/data

@@ -1,0 +1,28 @@
+#!/command/with-contenv sh
+# shellcheck shell=sh
+exec 2>&1
+export HOME=/opt/data
+export XDG_CACHE_HOME=/opt/data/.cache
+export XDG_CONFIG_HOME=/opt/data/.config
+
+while ! s6-setuidgid hermes xdpyinfo -display "${DISPLAY:-:99}" >/dev/null 2>&1; do
+    s6-sleep 1
+done
+
+while ! s6-setuidgid hermes dbus-send --session --type=method_call \
+    --print-reply --dest=org.a11y.Bus /org/a11y/bus \
+    org.a11y.Bus.GetAddress >/dev/null 2>&1; do
+    s6-sleep 1
+done
+
+exec s6-setuidgid hermes chromium \
+    --ozone-platform=x11 \
+    --force-renderer-accessibility \
+    --no-sandbox \
+    --user-data-dir=/opt/data/computer-use/chromium-profile \
+    --no-first-run \
+    --no-default-browser-check \
+    --password-store=basic \
+    --window-position=0,0 \
+    --window-size=1920,1080 \
+    about:blank

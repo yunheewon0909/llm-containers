@@ -4,9 +4,13 @@ Docker-based local AI stack using LM Studio as the inference backend.
 
 ## Services
 
-- Open WebUI
-- Hermes Agent
-- SearXNG
+| Service | Local address |
+| --- | --- |
+| Open WebUI | `http://localhost:3000` |
+| Hermes gateway | `http://localhost:8642` |
+| Hermes Agent Dashboard | `http://localhost:9119` |
+| Hermes virtual desktop | `vnc://localhost:5901` |
+| SearXNG | `http://localhost:8888` |
 
 All persistent runtime data is stored in Docker named volumes.
 
@@ -61,7 +65,7 @@ Initial Hermes setup:
 ```bash
 cd ../hermes
 docker compose run --rm hermes setup
-docker compose up -d
+docker compose up -d --build
 ```
 
 ## LM Studio
@@ -161,13 +165,13 @@ http://searxng:8080
 
 ## Update
 
-Run inside each service directory:
+For Open WebUI, run inside its service directory:
 
 ```bash
 docker compose pull && docker compose up -d
 ```
 
-For SearXNG:
+For SearXNG and Hermes, which use local custom images:
 
 ```bash
 docker compose build --pull
@@ -200,10 +204,22 @@ Open WebUI:
 /Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=443 localhost:3000
 ```
 
-SearXNG Dashboard:
+SearXNG web UI:
 
 ```bash
 /Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=8443 localhost:8888
+```
+
+Hermes Agent Dashboard:
+
+```bash
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=9119 localhost:9119
+```
+
+Hermes VNC uses raw TCP Serve rather than HTTP/HTTPS Serve:
+
+```bash
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --tcp=5901 tcp://localhost:5901
 ```
 
 Check:
@@ -212,6 +228,25 @@ Check:
 /Applications/Tailscale.app/Contents/MacOS/Tailscale serve status
 ```
 
+Use the displayed MagicDNS name from another tailnet device. Open the web
+services with their displayed `https://` URLs and VNC with:
+
+```text
+vnc://<mac-magicdns-name>:5901
+```
+
+Hermes generates its VNC and Dashboard credentials in the persistent
+`hermes-data` volume. See [Hermes VNC and Dashboard credentials](hermes/README.md#vnc-and-dashboard-credentials)
+for the retrieval commands.
+
+Tailscale Serve is private to the tailnet and follows its access controls. Do
+not use Tailscale Funnel for Hermes VNC or the Dashboard.
+
 ## Security
 
-Do not commit API keys, tokens, credentials, runtime data, or Docker volume exports.
+All host ports remain bound to `127.0.0.1`. Do not change them to a public
+interface just to enable remote access; use Tailscale Serve and restrict
+tailnet access instead.
+
+Do not commit API keys, tokens, credentials, runtime data, or Docker volume
+exports.

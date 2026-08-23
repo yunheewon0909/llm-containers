@@ -1,0 +1,9 @@
+#!/command/with-contenv sh
+# shellcheck shell=sh
+exec 2>&1
+
+exec s6-setuidgid hermes Xvfb "${DISPLAY:-:99}" \
+    -screen 0 1920x1080x24 \
+    -nolisten tcp \
+    -noreset
+

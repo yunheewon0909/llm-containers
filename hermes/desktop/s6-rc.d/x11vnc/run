@@ -1,0 +1,23 @@
+#!/command/with-contenv sh
+# shellcheck shell=sh
+exec 2>&1
+export HOME=/opt/data
+export XDG_CACHE_HOME=/opt/data/.cache
+export XDG_CONFIG_HOME=/opt/data/.config
+
+while ! s6-setuidgid hermes xdpyinfo -display "${DISPLAY:-:99}" >/dev/null 2>&1; do
+    s6-sleep 1
+done
+
+vnc_password_file=/opt/data/computer-use/credentials/vnc-password
+if [ ! -r "${vnc_password_file}" ]; then
+    echo "x11vnc password file is not readable: ${vnc_password_file}" >&2
+    exit 1
+fi
+
+exec s6-setuidgid hermes x11vnc \
+    -display "${DISPLAY:-:99}" \
+    -rfbport 5900 \
+    -forever \
+    -shared \
+    -passwdfile "${vnc_password_file}"

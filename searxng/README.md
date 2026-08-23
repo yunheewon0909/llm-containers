@@ -67,9 +67,13 @@ Inspect:
 docker volume inspect searxng-cache
 ```
 
-## Network
+## Network and Local Access
 
-SearXNG is not exposed to the host.
+SearXNG is published only on the host loopback interface:
+
+```text
+http://localhost:8888
+```
 
 It is available to containers on `local-ai-network` at:
 
@@ -90,6 +94,24 @@ Test from Hermes:
 docker exec hermes curl -s \
   "http://searxng:8080/search?q=test&format=json"
 ```
+
+## Remote Access with Tailscale
+
+Keep SearXNG bound to localhost and expose it privately to the tailnet with:
+
+```bash
+/Applications/Tailscale.app/Contents/MacOS/Tailscale \
+  serve --bg --https=8443 localhost:8888
+```
+
+Check the assigned URL:
+
+```bash
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve status
+```
+
+For the complete port matrix, including Hermes Dashboard and VNC, see the
+[repository Tailscale instructions](../README.md#remote-access-with-tailscale).
 
 ## Open WebUI
 
