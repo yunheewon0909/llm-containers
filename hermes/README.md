@@ -6,6 +6,46 @@ VNC, and the upstream Hermes Agent Dashboard. Hermes keeps its upstream
 entrypoint, `gateway run` command, data volume, LM Studio connection, and
 shared Docker network.
 
+## Test Notes (2026-08-25)
+
+These notes summarize hands-on testing of Hermes in this Docker setup as of
+2026-08-25. They are a personal usage evaluation, not a benchmark.
+
+### Observations
+
+- Because Hermes runs in an isolated environment rather than the actual host
+  workspace, it felt closer to a customized chatbot than a personal assistant
+  agent.
+- The set of practical automations was limited by the container boundary.
+- The virtual monitor and Chromium could be configured and launched, but the
+  desktop interaction was too slow for normal use.
+- The GUI rendered in the virtual monitor was extremely limited. In the
+  current container setup, Chromium was effectively the only usable
+  application. Closing Chromium showed an empty black screen for about two
+  seconds before Chromium reopened automatically, leaving no practical
+  desktop environment beyond the browser.
+- VNC interaction had severe lag, making remote desktop management unreliable
+  and difficult to use as a working environment.
+- Overall, the Docker deployment did not provide a sufficiently responsive or
+  capable GUI environment for this use case.
+
+### Current decision
+
+Docker-based Hermes use is temporarily paused. The next test will run Hermes
+directly on the macOS host to determine whether host-level access, automation,
+and GUI responsiveness better match the intended assistant workflow.
+
+### Revisit criteria
+
+When comparing the host setup with Docker, check:
+
+- responsiveness of GUI interactions;
+- reliability of browser control;
+- availability of applications beyond the browser and behavior when it closes;
+- useful automation coverage;
+- access to the real host workspace and applications; and
+- the security and permission boundary required for everyday use.
+
 ## Requirements
 
 - Docker Desktop
@@ -342,4 +382,30 @@ Inspect it without modifying it:
 
 ```bash
 docker volume inspect hermes-data
+```
+
+## Reset Hermes
+
+To stop Hermes and remove its container, the `hermes-data` volume, and any
+orphan containers from this Compose project, run this from the `hermes`
+directory:
+
+```bash
+docker compose down --volumes --remove-orphans
+```
+
+> Warning: This permanently deletes Hermes configuration, sessions, generated
+> VNC and Dashboard credentials, and the Chromium profile stored in
+> `hermes-data`. Back up anything you need before running it.
+
+The command leaves the external `local-ai-network` and the local Hermes Docker
+image intact. No separate `docker volume rm hermes-data` command is required.
+If you only want to stop Hermes while retaining its data, use
+`docker compose down` under [Operations](#operations) instead.
+
+Verify that the container and volume are gone:
+
+```bash
+docker volume ls --filter name=hermes-data
+docker ps -a --filter name=hermes
 ```

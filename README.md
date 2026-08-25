@@ -2,6 +2,13 @@
 
 Docker-based local AI stack using LM Studio as the inference backend.
 
+## Hermes Docker Test Status
+
+As of 2026-08-25, Docker-based Hermes use is temporarily paused while Hermes
+is tested directly on the macOS host. The current experience and the reason
+for this decision are documented in the
+[Hermes test notes](hermes/README.md#test-notes-2026-08-25).
+
 ## Services
 
 | Service | Local address |
@@ -67,6 +74,9 @@ cd ../hermes
 docker compose run --rm hermes setup
 docker compose up -d --build
 ```
+
+To remove the Hermes container and all persistent Hermes data, see
+[Reset Hermes](hermes/README.md#reset-hermes).
 
 ## LM Studio
 
