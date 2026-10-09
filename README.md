@@ -18,8 +18,11 @@ for this decision are documented in the
 | Hermes Agent Dashboard | `http://localhost:9119` |
 | Hermes virtual desktop | `vnc://localhost:5901` |
 | SearXNG | `http://localhost:8888` |
+| Crawl4AI | `http://localhost:11235` |
 
-All persistent runtime data is stored in Docker named volumes.
+Open WebUI, Hermes, and SearXNG store persistent runtime data in Docker named
+volumes. Crawl4AI uses temporary filesystems for caches, jobs, and artifacts;
+save any required extraction results in the calling client.
 
 ## Architecture
 
@@ -30,9 +33,10 @@ LM Studio (macOS)
        │
 Docker ├── Open WebUI
        ├── Hermes
-       └── SearXNG
-            │
-            └── Internet
+       ├── SearXNG (search)
+       └── Crawl4AI (page extraction)
+                │
+                └── Internet
 
 Shared Docker network:
 local-ai-network
@@ -59,6 +63,19 @@ Start SearXNG:
 cd searxng
 docker compose up -d
 ```
+
+Start Crawl4AI:
+
+```bash
+cd ../crawl4ai
+test -f .env || (umask 077; printf 'CRAWL4AI_API_TOKEN=%s\n' "$(openssl rand -hex 32)" > .env)
+chmod 600 .env
+docker compose config --quiet
+docker compose up -d --wait --wait-timeout 120
+```
+
+Crawl4AI needs a non-empty API token. See the [Crawl4AI guide](crawl4ai/README.md)
+for request examples, authentication, temporary data, and troubleshooting.
 
 Start Open WebUI:
 
@@ -173,9 +190,38 @@ Hermes:
 http://searxng:8080
 ```
 
+## Crawl4AI and Search → Fetch
+
+Crawl4AI runs the official `unclecode/crawl4ai:0.9.4` ARM64-compatible image.
+Plain Markdown extraction does not require an LLM API key.
+
+| Client | Search | Fetch |
+| --- | --- | --- |
+| macOS host | `http://localhost:8888` | `http://localhost:11235` |
+| Shared-network container | `http://searxng:8080` | `http://crawl4ai:11235` |
+
+The caller searches SearXNG, selects up to three distinct HTTP(S) URLs, sends
+those URLs to Crawl4AI's `/crawl` endpoint with a Bearer token, and passes
+successful Markdown and source URLs to the model. `GET /health` is public;
+other API endpoints require the token stored in `crawl4ai/.env`.
+
+As of 2026-10-09, token authentication, real page extraction, shared-network
+connectivity, and SearXNG → Crawl4AI extraction were verified. A request using
+SearXNG's GitHub engine returned 30 results; fetching the official Crawl4AI
+repository produced 47,119 Markdown characters. The default search engines
+were rate-limited or CAPTCHA-blocked during verification, so that successful
+test used `engines=github` per request without changing the default settings.
+
+Adding the service does not replace Open WebUI or Hermes's existing fetch
+tool. Client-specific tool integration remains a separate step. General web
+searches still need a responsive general-purpose SearXNG engine. Crawl4AI
+has a 4 GiB memory limit and 1 GiB private shared memory.
+
+See [Crawl4AI usage and verification](crawl4ai/README.md).
+
 ## Update
 
-For Open WebUI, run inside its service directory:
+For Open WebUI and Crawl4AI, run inside the respective service directory:
 
 ```bash
 docker compose pull && docker compose up -d
@@ -202,7 +248,10 @@ Expected containers:
 open-webui
 hermes
 searxng
+crawl4ai
 ```
+
+Hermes is listed as a configured service; it is currently paused as noted above.
 
 ## Remote Access with Tailscale
 
@@ -259,4 +308,6 @@ interface just to enable remote access; use Tailscale Serve and restrict
 tailnet access instead.
 
 Do not commit API keys, tokens, credentials, runtime data, or Docker volume
-exports.
+exports. The real Crawl4AI `.env` is ignored; only the empty `.env.example`
+belongs in Git. Public configuration files describe how to generate
+credentials rather than storing their values.

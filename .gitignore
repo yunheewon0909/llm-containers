@@ -5,6 +5,9 @@
 .env
 .env.*
 !.env.example
+.llm.env
+.llm.env.*
+!.llm.env.example
 
 # Runtime data / databases
 *.db

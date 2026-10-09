@@ -1,0 +1,51 @@
+name: crawl4ai
+
+services:
+  crawl4ai:
+    image: unclecode/crawl4ai:0.9.4
+    container_name: crawl4ai
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:11235:11235"
+
+    environment:
+      CRAWL4AI_API_TOKEN: ${CRAWL4AI_API_TOKEN:?Set CRAWL4AI_API_TOKEN in .env before starting Crawl4AI}
+
+    shm_size: "1gb"
+
+    # Runtime isolation and writable paths from the upstream 0.9.4 Compose file.
+    user: "appuser"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/lib/redis:uid=999,gid=999,mode=0700
+      - /var/lib/crawl4ai/outputs:uid=999,gid=999,mode=0700
+      - /home/appuser/.crawl4ai:uid=999,gid=999,mode=0700
+      - /home/appuser/.cache/url_seeder:uid=999,gid=999,mode=0700
+      - /home/appuser/.gunicorn:uid=999,gid=999,mode=0700
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          pids: 512
+        reservations:
+          memory: 1G
+
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:11235/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    networks:
+      - local-ai-network
+
+networks:
+  local-ai-network:
+    external: true
