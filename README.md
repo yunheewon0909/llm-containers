@@ -257,11 +257,16 @@ Hermes is listed as a configured service; it is currently paused as noted above.
 
 Services remain bound to `127.0.0.1`.
 
+On this host, OpenClaw manages the default HTTPS port `443`. Open WebUI uses
+HTTPS port `10000`, while its local Docker port remains `3000`.
+
 Open WebUI:
 
 ```bash
-/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=443 localhost:3000
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=10000 localhost:3000
 ```
+
+Open from another tailnet device at `https://<mac-magicdns-name>:10000/`.
 
 SearXNG web UI:
 

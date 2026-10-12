@@ -37,10 +37,13 @@ ports:
   - "127.0.0.1:3000:8080"
 ```
 
+On this host, OpenClaw manages the default HTTPS port `443`. Open WebUI uses
+HTTPS port `10000`, while its local Docker port remains `3000`.
+
 If Tailscale is installed as a macOS app:
 
 ```bash
-/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=443 localhost:3000
+/Applications/Tailscale.app/Contents/MacOS/Tailscale serve --bg --https=10000 localhost:3000
 ```
 
 Check the assigned URL:
@@ -49,7 +52,8 @@ Check the assigned URL:
 /Applications/Tailscale.app/Contents/MacOS/Tailscale serve status
 ```
 
-Use the displayed `*.ts.net` URL from another device connected to the same tailnet.
+From another device connected to the same tailnet, open
+`https://<mac-magicdns-name>:10000/` using the MagicDNS name shown above.
 
 For the complete port matrix, including Hermes Dashboard and VNC, see the
 [repository Tailscale instructions](../README.md#remote-access-with-tailscale).
